@@ -45,24 +45,39 @@ A Model Context Protocol server that provides **SD Elements API integration**. T
 
 ### Using uvx (recommended)
 
-You can run the server directly using `uvx` without installing:
+#### Option 1: From GitHub (Current)
+```bash
+uvx git+https://github.com/geoffwhittington/sde-mcp.git
+```
 
+#### Option 2: From PyPI (Future - when published)
 ```bash
 uvx sde-mcp-server
 ```
 
-### Using uv pip
+### Using uv
 
+#### Install from GitHub
 ```bash
-# Install the package
-uv pip install sde-mcp-server
+uv pip install git+https://github.com/geoffwhittington/sde-mcp.git
+sde-mcp-server
+```
 
-# Run the server
+#### Install from PyPI (when available)
+```bash
+uv pip install sde-mcp-server
 sde-mcp-server
 ```
 
 ### Using pip
 
+#### Install from GitHub
+```bash
+pip install git+https://github.com/geoffwhittington/sde-mcp.git
+sde-mcp-server
+```
+
+#### Install from PyPI (when available)
 ```bash
 pip install sde-mcp-server
 sde-mcp-server
@@ -103,6 +118,23 @@ SDE_API_KEY=your-api-key-here
 
 Add this to your Claude Desktop configuration file:
 
+#### Option 1: From GitHub (Current)
+```json
+{
+  "mcpServers": {
+    "sde-elements": {
+      "command": "uvx",
+      "args": ["git+https://github.com/geoffwhittington/sde-mcp.git"],
+      "env": {
+        "SDE_HOST": "https://your-sdelements-instance.com",
+        "SDE_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+#### Option 2: From PyPI (Future)
 ```json
 {
   "mcpServers": {
@@ -122,12 +154,13 @@ Add this to your Claude Desktop configuration file:
 
 Add this to your Cline MCP settings:
 
+#### From GitHub (Current)
 ```json
 {
   "mcpServers": {
     "sde-elements": {
       "command": "uvx",
-      "args": ["sde-mcp-server"],
+      "args": ["git+https://github.com/geoffwhittington/sde-mcp.git"],
       "env": {
         "SDE_HOST": "https://your-sdelements-instance.com",
         "SDE_API_KEY": "your-api-key-here"
@@ -141,12 +174,13 @@ Add this to your Cline MCP settings:
 
 Add this to your Continue configuration:
 
+#### From GitHub (Current)
 ```json
 {
   "mcpServers": {
     "sde-elements": {
       "command": "uvx",
-      "args": ["sde-mcp-server"],
+      "args": ["git+https://github.com/geoffwhittington/sde-mcp.git"],
       "env": {
         "SDE_HOST": "https://your-sdelements-instance.com",
         "SDE_API_KEY": "your-api-key-here"
@@ -160,13 +194,13 @@ Add this to your Continue configuration:
 
 Add this to your Cursor configuration file:
 
-#### Option 1: Using uvx (Recommended)
+#### Option 1: From GitHub (Current)
 ```json
 {
   "mcpServers": {
     "sde-elements": {
       "command": "uvx",
-      "args": ["sde-mcp-server"],
+      "args": ["git+https://github.com/geoffwhittington/sde-mcp.git"],
       "env": {
         "SDE_HOST": "https://your-sdelements-instance.com",
         "SDE_API_KEY": "your-api-key-here"
