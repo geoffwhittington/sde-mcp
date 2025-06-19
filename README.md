@@ -10,6 +10,10 @@ A Model Context Protocol server that provides **SD Elements API integration**. T
 
 </div>
 
+<a href="https://glama.ai/mcp/servers/@geoffwhittington/sde-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@geoffwhittington/sde-mcp/badge" alt="SD Elements Server MCP server" />
+</a>
+
 ## Available Tools
 
 ### Project Management
@@ -325,4 +329,4 @@ For issues and questions:
 
 ---
 
-**Note**: This is an unofficial MCP server for SD Elements. For official SD Elements support, please contact Security Compass. 
+**Note**: This is an unofficial MCP server for SD Elements. For official SD Elements support, please contact Security Compass.
