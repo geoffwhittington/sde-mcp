@@ -479,7 +479,27 @@ sde-mcp-server
 
 ## Key Features & Use Cases
 
-### 1. Natural Language Survey Management
+### 1. Project & Application Management
+
+**Create and manage projects:**
+
+```
+"Create a new project called 'Mobile Banking App' in application 456"
+"Update project 123's description to 'Customer-facing mobile banking application'"
+"List all projects and show their status"
+"Delete project 789"
+```
+
+**Manage applications:**
+
+```
+"Create an application called 'Customer Portal'"
+"List all applications"
+"Update application 456's description"
+"Get details for application 123"
+```
+
+### 2. Natural Language Survey Management
 
 **Set surveys using plain English instead of answer IDs:**
 
@@ -500,11 +520,18 @@ sde-mcp-server
 ```
 "What answers are in the survey for project 123?"
 "Show me the current survey answers"
+"Show the survey answers grouped by section"
+```
+
+**Commit survey changes:**
+
+```
+"Commit the survey draft for project 123"
 ```
 
 **No need to know answer IDs** - just use technology names like "Java", "Python", "AWS", etc.
 
-### 2. Automated Repository Scanning
+### 3. Automated Repository Scanning
 
 **Scan repositories to auto-populate surveys:**
 
@@ -524,9 +551,11 @@ The system will:
 "Is my scan complete?"
 "What did the repository scan detect?"
 "Show scan status for project 123"
+"List all scans"
+"List available repository connections"
 ```
 
-### 3. Threat Model Diagrams
+### 4. Threat Model Diagrams
 
 **Create diagrams from natural language:**
 
@@ -540,6 +569,16 @@ Node.js API, PostgreSQL database, and Redis cache on AWS"
 ```
 "Import the diagram from ./diagrams/threat-model.json into project 123"
 "Import my draw.io file at ~/Documents/architecture.drawio"
+"Import threat model from Microsoft Threat Modeling Tool export"
+```
+
+**Manage existing diagrams:**
+
+```
+"List all diagrams for project 123"
+"Get diagram 456"
+"Update diagram 456 with new data"
+"Delete diagram 789"
 ```
 
 Supports:
@@ -547,7 +586,19 @@ Supports:
 - diagrams.net (draw.io)
 - SD Elements JSON format
 
-### 4. Advanced Reporting with Natural Language
+### 5. Countermeasure Management
+
+**Track and manage security countermeasures:**
+
+```
+"List all countermeasures for project 123"
+"Show open countermeasures for project 123"
+"Get details for countermeasure 456"
+"Update countermeasure 456 status to complete"
+"Add notes to countermeasure 789"
+```
+
+### 6. Advanced Reporting with Natural Language
 
 **Generate reports using plain English:**
 
@@ -555,6 +606,15 @@ Supports:
 "Show me all high-priority countermeasures across my projects"
 "Generate a report of security tasks completed this month"
 "What's the status of countermeasures in project 123?"
+"List all projects by business unit"
+```
+
+**Create and execute custom reports:**
+
+```
+"Create a report showing all projects with their countermeasure status"
+"Run report 123 in JSON format"
+"Execute a Cube query to analyze security trends"
 ```
 
 The AI will:
@@ -562,6 +622,34 @@ The AI will:
 - Execute queries
 - Present insights in natural language
 - Highlight trends and recommendations
+
+### 7. User & Team Management
+
+**Manage users and teams:**
+
+```
+"List all active users"
+"Get details for user 123"
+"Who am I? (get current authenticated user)"
+"List all business units"
+"Get business unit 456 details"
+```
+
+### 8. Connection Testing & Generic API Access
+
+**Test API connectivity:**
+
+```
+"Test the connection to SD Elements"
+"Verify my API credentials"
+```
+
+**Make custom API requests:**
+
+```
+"Make a GET request to endpoint projects/123/"
+"Call the custom API endpoint with specific parameters"
+```
 
 ## Features
 
@@ -574,6 +662,28 @@ The AI will:
 - **MCP Compliant**: Fully compatible with the Model Context Protocol
 
 ## Complete Example Workflows
+
+### Project Setup Workflow
+
+```
+# Create application and project
+"Create an application called 'E-Commerce Platform'"
+→ AI: "Created application (ID: 456)"
+
+"Create a project called 'Payment Service' in application 456"
+→ AI: "Created project (ID: 789)"
+
+# Set up initial survey
+"Set the survey for project 789 to: Python, FastAPI, PostgreSQL, Redis, AWS, Docker"
+→ AI: "Survey updated with 6 answers"
+
+# Verify setup
+"List all projects and show their details"
+→ AI: Shows all projects including the new one
+
+"Get details for project 789"
+→ AI: Shows full project details including survey configuration
+```
 
 ### Survey Management Workflow
 
@@ -590,9 +700,13 @@ The AI will:
 "Add Redis for caching"
 → AI: "Added Redis. Total answers: 5"
 
-# Verify
-"Show me the updated survey"
-→ AI: "Current answers: Python, PostgreSQL, Docker, On-Premise, Redis"
+# View detailed survey
+"Show me the survey answers grouped by section"
+→ AI: Shows answers organized by survey sections (Architecture, Technologies, etc.)
+
+# Commit changes
+"Commit the survey draft for project 123"
+→ AI: "Survey draft committed successfully"
 ```
 
 ### Repository Scanning Workflow
@@ -600,18 +714,19 @@ The AI will:
 ```
 # First time setup (one-time)
 "List my scan connections"
-→ AI: "No connections found. You need to connect GitHub/GitLab first."
-
-"I have a GitHub token: ghp_xxxxxxxxxxxx"
-→ AI: "Connected to GitHub successfully!"
+→ AI: "Found 1 connection: GitHub (ID: 1)"
 
 # Scan repositories (anytime)
 "Scan https://github.com/company/api-service for project 456"
 → AI: "Scan started (ID: 789). Analyzing repository..."
 
 # Check progress
-"Is the scan done?"
+"What's the status of scan 789?"
 → AI: "Scan complete! Detected: Python, FastAPI, PostgreSQL, Docker, AWS"
+
+# List all scans
+"List all scans for project 456"
+→ AI: Shows scan history with status and results
 
 # Survey is now auto-populated
 "Show me the survey"
@@ -630,9 +745,40 @@ with MySQL database and S3 storage"
 "Import my threat model from ./diagrams/app-threat-model.json"
 → AI: "Imported diagram 'Application Threat Model' with 12 components"
 
-# View diagrams
-"List diagrams for project 123"
+# Import from draw.io
+"Import the diagram from ~/Documents/architecture.drawio into project 123"
+→ AI: "Successfully imported draw.io diagram"
+
+# Manage diagrams
+"List all diagrams for project 123"
 → AI: Shows all diagrams with names and IDs
+
+"Get diagram 456"
+→ AI: Returns full diagram data
+
+"Delete diagram 789"
+→ AI: "Diagram deleted successfully"
+```
+
+### Countermeasure Management Workflow
+
+```
+# View countermeasures
+"List all countermeasures for project 123"
+→ AI: Shows all countermeasures with status
+
+"Show only open countermeasures for project 123"
+→ AI: Filters to show incomplete countermeasures
+
+# Update countermeasure
+"Get details for countermeasure 456"
+→ AI: Shows full countermeasure details
+
+"Update countermeasure 456 status to completed"
+→ AI: "Countermeasure marked as completed"
+
+"Add a note to countermeasure 456: Implemented OAuth 2.0 with JWT tokens"
+→ AI: "Note added successfully"
 ```
 
 ### Reporting Workflow
@@ -646,22 +792,120 @@ with MySQL database and S3 storage"
 → AI: "23 countermeasures completed in September. 
       Top categories: Authentication (8), Data Protection (7)..."
 
-"Generate a security status report for all projects"
-→ AI: Creates comprehensive report with trends and recommendations
+# Custom reports
+"List all available reports"
+→ AI: Shows existing reports
+
+"Run report 123 in JSON format"
+→ AI: Executes report and returns JSON data
+
+"Create a report showing all projects with their security status"
+→ AI: Creates custom report with specified parameters
+
+# Generate from description
+"Generate a report showing trends in countermeasure completion over time"
+→ AI: Creates and executes appropriate query, presents insights
+```
+
+### User & Team Management Workflow
+
+```
+# User management
+"List all active users"
+→ AI: Shows list of active users
+
+"Who am I?"
+→ AI: "You are: John Doe (john.doe@company.com), Role: Admin"
+
+"Get details for user 123"
+→ AI: Shows user profile and permissions
+
+# Business units
+"List all business units"
+→ AI: Shows organizational structure
+
+"Get business unit 456 details"
+→ AI: Shows business unit info with associated applications
+```
+
+### Full Project Lifecycle Example
+
+```
+# 1. Initial Setup
+"Create application 'Banking Services'"
+"Create project 'Mobile App' in application 123"
+
+# 2. Configure via repository scan
+"Scan https://github.com/company/mobile-app for project 456"
+"Wait for scan to complete and commit survey"
+
+# 3. Create architecture diagram
+"Create a diagram: iOS and Android apps, REST API gateway, 
+microservices (auth, payments, accounts), PostgreSQL, Redis cache, AWS"
+
+# 4. Track security work
+"List all countermeasures for project 456"
+"Update high-priority countermeasures"
+
+# 5. Monitor progress
+"Generate a security status report for project 456"
+"Show countermeasure completion trends"
+
+# 6. Make updates
+"Add Kubernetes to the survey"
+"Update diagram to include new monitoring service"
+
+# 7. Generate reports
+"Create executive summary of security posture for all projects"
 ```
 
 ## API Coverage
 
-This server provides access to:
+This server provides comprehensive access to SD Elements functionality:
 
-- Projects and Applications
-- Project Surveys with natural language control
-- Repository Scanning (GitHub/GitLab)
-- Threat Model Diagrams
-- Advanced Reports with natural language queries
-- Countermeasures and Tasks
-- Users and Teams
-- Business Units and Groups
+### Core Resources
+- **Projects**: Full CRUD (Create, Read, Update, Delete) operations
+- **Applications**: Create, list, view, and update applications
+- **Business Units**: List and view organizational structure
+
+### Security Management
+- **Countermeasures**: List, view, update status, and add notes
+- **Project Surveys**: Full survey management with natural language support
+  - Set answers using technology names (no ID lookup needed)
+  - Add/remove specific answers incrementally
+  - View current configuration in multiple formats
+  - Commit survey drafts
+  - Auto-resolve dependencies
+
+### Automation & Integration
+- **Repository Scanning**: Automated technology detection
+  - GitHub and GitLab integration
+  - Automatic survey population
+  - Scan status tracking
+  - Historical scan management
+  
+- **Threat Model Diagrams**: Complete diagram lifecycle
+  - Create from natural language descriptions
+  - Import from multiple formats (Microsoft Threat Modeling Tool, draw.io, JSON)
+  - Full CRUD operations
+  - Visual architecture documentation
+
+### Analytics & Reporting
+- **Advanced Reports**: Flexible reporting and analytics
+  - List available reports
+  - Execute existing reports (JSON/CSV output)
+  - Create custom reports with Cube API
+  - Generate reports from natural language descriptions
+  - Execute Cube queries directly for advanced analytics
+
+### User & Team Management
+- **Users**: List users, view profiles, get current user
+- **Authentication**: Test API connectivity and credentials
+
+### Advanced Features
+- **Generic API Access**: Make custom API calls to any SD Elements endpoint
+- **Flexible Configuration**: Environment-based setup with `.env` support
+- **Natural Language Interface**: Control everything through plain English commands
 
 ## License
 
