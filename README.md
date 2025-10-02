@@ -51,23 +51,15 @@ A Model Context Protocol server that provides **SD Elements API integration**. T
 * `create_diagram` - Create a new project diagram
 * `update_diagram` - Update an existing diagram
 * `delete_diagram` - Delete a project diagram
-* `create_diagram_from_description` - Create a diagram from natural language architecture description
-* `import_diagram` - Import diagram from Microsoft Threat Modeling Tool, diagrams.net (draw.io), or JSON
 
-**Import from local files:**
-In Cursor or other MCP clients, you can reference local files directly:
-```
-"Import the diagram from ./diagrams/threat-model.json into project 123"
-"Read my draw.io file at ~/Documents/architecture.drawio and import it to project 456"
-```
-The AI will read the file and use `import_diagram` automatically.
+**Note:** The Project Diagrams feature requires enablement by your Customer Success Manager. Contact your CSM if this feature is not available on your instance.
 
 ### Advanced Reports
 * `list_advanced_reports` - List all advanced reports
 * `get_advanced_report` - Get report configuration
 * `run_advanced_report` - Execute a report and get the data (JSON/CSV)
 * `create_advanced_report` - Create a new advanced report
-* `generate_report_from_description` - Generate and analyze reports using natural language
+* `execute_cube_query` - Execute Cube API queries directly for advanced analytics
 
 ## Quick Start
 
@@ -557,34 +549,17 @@ The system will:
 
 ### 4. Threat Model Diagrams
 
-**Create diagrams from natural language:**
-
-```
-"Create a diagram for project 123: Web app with React frontend, 
-Node.js API, PostgreSQL database, and Redis cache on AWS"
-```
-
-**Import diagrams from files:**
-
-```
-"Import the diagram from ./diagrams/threat-model.json into project 123"
-"Import my draw.io file at ~/Documents/architecture.drawio"
-"Import threat model from Microsoft Threat Modeling Tool export"
-```
-
-**Manage existing diagrams:**
+**Manage diagrams:**
 
 ```
 "List all diagrams for project 123"
 "Get diagram 456"
+"Create a new diagram for project 123"
 "Update diagram 456 with new data"
 "Delete diagram 789"
 ```
 
-Supports:
-- Microsoft Threat Modeling Tool
-- diagrams.net (draw.io)
-- SD Elements JSON format
+**Note:** The Project Diagrams feature must be enabled on your SD Elements instance. Contact your Customer Success Manager to enable this feature.
 
 ### 5. Countermeasure Management
 
@@ -598,30 +573,25 @@ Supports:
 "Add notes to countermeasure 789"
 ```
 
-### 6. Advanced Reporting with Natural Language
+### 6. Advanced Reporting
 
-**Generate reports using plain English:**
-
-```
-"Show me all high-priority countermeasures across my projects"
-"Generate a report of security tasks completed this month"
-"What's the status of countermeasures in project 123?"
-"List all projects by business unit"
-```
-
-**Create and execute custom reports:**
+**Work with reports:**
 
 ```
-"Create a report showing all projects with their countermeasure status"
+"List all available reports"
 "Run report 123 in JSON format"
-"Execute a Cube query to analyze security trends"
+"Get report 456 configuration"
+"Create a report showing all projects with their countermeasure status"
 ```
 
-The AI will:
-- Find or create appropriate reports
-- Execute queries
-- Present insights in natural language
-- Highlight trends and recommendations
+**Execute custom Cube queries:**
+
+```
+"Execute a Cube query to analyze security trends"
+"Run a custom query on the countermeasure schema"
+```
+
+Use the Advanced Reports and Cube API to generate custom analytics and insights from your SD Elements data.
 
 ### 7. User & Team Management
 
@@ -733,32 +703,31 @@ The AI will:
 → AI: "Survey has 15 answers based on repository scan"
 ```
 
-### Diagram Creation Workflow
+### Diagram Management Workflow
 
 ```
-# Create from description
-"Create a diagram for project 123: Mobile iOS app connecting to REST API, 
-with MySQL database and S3 storage"
-→ AI: Creates diagram with components: iOS App, REST API, MySQL, Amazon S3
-
-# Import existing diagram
-"Import my threat model from ./diagrams/app-threat-model.json"
-→ AI: "Imported diagram 'Application Threat Model' with 12 components"
-
-# Import from draw.io
-"Import the diagram from ~/Documents/architecture.drawio into project 123"
-→ AI: "Successfully imported draw.io diagram"
-
-# Manage diagrams
+# List diagrams
 "List all diagrams for project 123"
 → AI: Shows all diagrams with names and IDs
 
+# View diagram
 "Get diagram 456"
 → AI: Returns full diagram data
 
+# Create diagram
+"Create a new diagram called 'System Architecture' for project 123"
+→ AI: "Diagram created successfully"
+
+# Update diagram
+"Update diagram 456 with new data"
+→ AI: "Diagram updated successfully"
+
+# Delete diagram
 "Delete diagram 789"
 → AI: "Diagram deleted successfully"
 ```
+
+**Note:** Diagrams must be created/edited through the SD Elements UI or API with proper JSON schema. The feature requires CSM enablement.
 
 ### Countermeasure Management Workflow
 
@@ -784,27 +753,23 @@ with MySQL database and S3 storage"
 ### Reporting Workflow
 
 ```
-# Natural language queries
-"Show me all open high-priority security tasks"
-→ AI: Generates and presents report with insights
-
-"What countermeasures were completed last month?"
-→ AI: "23 countermeasures completed in September. 
-      Top categories: Authentication (8), Data Protection (7)..."
-
-# Custom reports
+# List and run reports
 "List all available reports"
 → AI: Shows existing reports
 
 "Run report 123 in JSON format"
 → AI: Executes report and returns JSON data
 
+"Get report 456 configuration"
+→ AI: Shows report query structure and parameters
+
+# Create custom reports
 "Create a report showing all projects with their security status"
 → AI: Creates custom report with specified parameters
 
-# Generate from description
-"Generate a report showing trends in countermeasure completion over time"
-→ AI: Creates and executes appropriate query, presents insights
+# Execute Cube queries
+"Execute a Cube query on the countermeasure schema"
+→ AI: Runs query and returns results
 ```
 
 ### User & Team Management Workflow
@@ -839,9 +804,9 @@ with MySQL database and S3 storage"
 "Scan https://github.com/company/mobile-app for project 456"
 "Wait for scan to complete and commit survey"
 
-# 3. Create architecture diagram
-"Create a diagram: iOS and Android apps, REST API gateway, 
-microservices (auth, payments, accounts), PostgreSQL, Redis cache, AWS"
+# 3. Manage diagrams (if enabled)
+"List diagrams for project 456"
+"Create a new diagram for the project"
 
 # 4. Track security work
 "List all countermeasures for project 456"
@@ -853,10 +818,11 @@ microservices (auth, payments, accounts), PostgreSQL, Redis cache, AWS"
 
 # 6. Make updates
 "Add Kubernetes to the survey"
-"Update diagram to include new monitoring service"
+"Update project components"
 
-# 7. Generate reports
-"Create executive summary of security posture for all projects"
+# 7. Create reports
+"Create a report showing security status for all projects"
+"Run report 123 to analyze countermeasure trends"
 ```
 
 ## API Coverage
@@ -884,18 +850,16 @@ This server provides comprehensive access to SD Elements functionality:
   - Scan status tracking
   - Historical scan management
   
-- **Threat Model Diagrams**: Complete diagram lifecycle
-  - Create from natural language descriptions
-  - Import from multiple formats (Microsoft Threat Modeling Tool, draw.io, JSON)
+- **Threat Model Diagrams**: Complete diagram lifecycle (requires CSM enablement)
   - Full CRUD operations
-  - Visual architecture documentation
+  - List, view, create, update, and delete diagrams
+  - Work with diagram data via API
 
 ### Analytics & Reporting
 - **Advanced Reports**: Flexible reporting and analytics
   - List available reports
   - Execute existing reports (JSON/CSV output)
   - Create custom reports with Cube API
-  - Generate reports from natural language descriptions
   - Execute Cube queries directly for advanced analytics
 
 ### User & Team Management

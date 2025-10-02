@@ -739,57 +739,6 @@ async def list_tools() -> List[Tool]:
                 "required": ["diagram_id"]
             }
         ),
-        Tool(
-            name="create_diagram_from_description",
-            description="Create a project diagram from a natural language description of the application architecture",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "project_id": {
-                        "type": "integer",
-                        "description": "The ID of the project",
-                        "minimum": 1
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Natural language description of the architecture (e.g., 'Web app with React frontend, Node.js backend, PostgreSQL database, and Redis cache, all on AWS')"
-                    },
-                    "diagram_name": {
-                        "type": "string",
-                        "description": "Name for the diagram (optional, defaults to 'System Architecture')"
-                    }
-                },
-                "required": ["project_id", "description"]
-            }
-        ),
-        Tool(
-            name="import_diagram",
-            description="Import a diagram from a file or diagram data. Supports Microsoft Threat Modeling Tool, diagrams.net (draw.io), and JSON formats.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "project_id": {
-                        "type": "integer",
-                        "description": "The ID of the project",
-                        "minimum": 1
-                    },
-                    "diagram_data": {
-                        "type": "object",
-                        "description": "Diagram data in JSON format (from Microsoft Threat Modeling Tool, diagrams.net, or SD Elements JSON schema)"
-                    },
-                    "diagram_name": {
-                        "type": "string",
-                        "description": "Name for the imported diagram"
-                    },
-                    "source_format": {
-                        "type": "string",
-                        "enum": ["microsoft_threat_modeling", "diagrams_net", "drawio", "json"],
-                        "description": "Source format of the diagram (optional, for better parsing)"
-                    }
-                },
-                "required": ["project_id", "diagram_data", "diagram_name"]
-            }
-        ),
         
         # Advanced Reports tools
         Tool(
@@ -869,25 +818,6 @@ async def list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["title", "chart", "query"]
-            }
-        ),
-        Tool(
-            name="generate_report_from_description",
-            description="Generate and execute an advanced report based on a natural language description. This is the easiest way to get report data.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "description": {
-                        "type": "string",
-                        "description": "Natural language description of what you want to report on (e.g., 'Show me all open security tasks by project', 'List countermeasures completed this month')"
-                    },
-                    "format": {
-                        "type": "string",
-                        "enum": ["json", "csv", "summary"],
-                        "description": "Output format (optional, defaults to 'summary' which provides a natural language summary)"
-                    }
-                },
-                "required": ["description"]
             }
         ),
         Tool(
@@ -1295,145 +1225,6 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             diagram_id = arguments["diagram_id"]
             result = api_client.delete_project_diagram(diagram_id)
             
-        elif name == "create_diagram_from_description":
-            project_id = arguments["project_id"]
-            description = arguments["description"]
-            diagram_name = arguments.get("diagram_name", "System Architecture")
-            
-            # Parse the description to identify components
-            description_lower = description.lower()
-            
-            # Common component mappings
-            component_keywords = {
-                'web app': 'web_application',
-                'frontend': 'web_application',
-                'backend': 'application_server',
-                'api': 'api_server',
-                'database': 'database',
-                'postgres': 'postgresql',
-                'mysql': 'mysql',
-                'mongodb': 'mongodb',
-                'redis': 'redis_cache',
-                'cache': 'cache',
-                'load balancer': 'load_balancer',
-                's3': 'amazon_s3',
-                'aws': 'cloud_storage',
-                'azure': 'cloud_storage',
-                'authentication': 'authentication_service',
-                'auth': 'authentication_service',
-                'mobile': 'mobile_app',
-            }
-            
-            # Find matching components
-            identified_components = []
-            for keyword, component_type in component_keywords.items():
-                if keyword in description_lower:
-                    identified_components.append({
-                        'type': component_type,
-                        'keyword': keyword
-                    })
-            
-            # Create a simple diagram structure
-            # Note: This is a simplified structure - actual SD Elements diagrams may require specific schema
-            diagram_data = {
-                'nodes': [],
-                'edges': [],
-                'metadata': {
-                    'generated_from': 'natural_language',
-                    'description': description
-                }
-            }
-            
-            # Add nodes for each identified component
-            for i, comp in enumerate(identified_components):
-                diagram_data['nodes'].append({
-                    'id': f'node_{i}',
-                    'type': comp['type'],
-                    'label': comp['keyword'].title(),
-                    'position': {'x': i * 150, 'y': 100}
-                })
-            
-            # Create basic connections (simplified logic)
-            for i in range(len(diagram_data['nodes']) - 1):
-                diagram_data['edges'].append({
-                    'from': f'node_{i}',
-                    'to': f'node_{i+1}',
-                    'type': 'data_flow'
-                })
-            
-            # Create the diagram
-            data = {
-                "project": project_id,
-                "name": diagram_name,
-                "diagram_data": diagram_data
-            }
-            
-            result = {
-                "diagram_created": True,
-                "identified_components": identified_components,
-                "description_parsed": description,
-                "note": "Diagram structure created from natural language. You may need to adjust it in SD Elements UI for your specific schema.",
-                "creation_data": data
-            }
-            
-            # Attempt to create the diagram
-            try:
-                creation_result = api_client.create_project_diagram(data)
-                result["creation_result"] = creation_result
-                result["success"] = True
-            except Exception as e:
-                result["success"] = False
-                result["error"] = str(e)
-                result["suggestion"] = "The diagram structure may need adjustment. Use get_project_survey to understand the project's components, then create_diagram with proper diagram_data format."
-            
-        elif name == "import_diagram":
-            project_id = arguments["project_id"]
-            diagram_data = arguments["diagram_data"]
-            diagram_name = arguments["diagram_name"]
-            source_format = arguments.get("source_format", "json")
-            
-            # Transform the diagram data based on source format
-            transformed_data = diagram_data
-            
-            if source_format in ["diagrams_net", "drawio"]:
-                # Parse diagrams.net/draw.io format
-                result_note = "Parsed diagrams.net/draw.io format"
-                # Note: Actual transformation would depend on the specific schema
-                # This is a placeholder for the transformation logic
-                
-            elif source_format == "microsoft_threat_modeling":
-                # Parse Microsoft Threat Modeling Tool format
-                result_note = "Parsed Microsoft Threat Modeling Tool format"
-                # Note: Actual transformation would depend on the specific schema
-                
-            else:
-                # Assume it's already in SD Elements JSON format
-                result_note = "Using provided JSON format"
-            
-            # Create the diagram
-            data = {
-                "project": project_id,
-                "name": diagram_name,
-                "diagram_data": transformed_data
-            }
-            
-            try:
-                creation_result = api_client.create_project_diagram(data)
-                result = {
-                    "success": True,
-                    "message": f"Diagram '{diagram_name}' imported successfully",
-                    "source_format": source_format,
-                    "note": result_note,
-                    "diagram": creation_result
-                }
-            except Exception as e:
-                result = {
-                    "success": False,
-                    "error": str(e),
-                    "source_format": source_format,
-                    "suggestion": "The diagram format may not be compatible. Supported formats: Microsoft Threat Modeling Tool, diagrams.net (draw.io), and SD Elements JSON. You may need to export your diagram in a compatible format first."
-                }
-            
         # Advanced Reports tools
         elif name == "list_advanced_reports":
             result = api_client.list_advanced_reports()
@@ -1462,19 +1253,6 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             if "type" in arguments:
                 data["type"] = arguments["type"]
             result = api_client.create_advanced_report(data)
-            
-        elif name == "generate_report_from_description":
-            description = arguments["description"]
-            output_format = arguments.get("format", "summary")
-            
-            # This is a placeholder that tells the AI to use existing reports or the API
-            # The actual implementation would require mapping natural language to report configs
-            result = {
-                "note": "This tool helps generate reports from natural language",
-                "description": description,
-                "format": output_format,
-                "instructions": "Use list_advanced_reports to find an existing report that matches, or use execute_cube_query to run a custom query. For a natural language summary, describe the key findings from the data."
-            }
             
         elif name == "execute_cube_query":
             query = arguments["query"]
