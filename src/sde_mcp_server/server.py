@@ -551,6 +551,11 @@ async def list_tools() -> List[Tool]:
                     "code_context": {
                         "type": "string",
                         "description": "Text description of the project/technologies (optional). This is provided for AI context only - the AI will determine survey answers from available options, not from static analysis."
+                    },
+                    "reuse_existing_project": {
+                        "type": "boolean",
+                        "description": "If true, reuse an existing project with the same name in the application instead of returning an error. Defaults to false.",
+                        "default": False
                     }
                 },
                 "required": ["project_name"]
@@ -684,14 +689,8 @@ async def list_tools() -> List[Tool]:
                         "minimum": 1
                     },
                     "countermeasure_id": {
-                        "type": "integer",
-                        "description": "The ID of the countermeasure to retrieve (task number, e.g., 536 for T536)",
-                        "minimum": 1
-                    },
-                    "risk_relevant": {
-                        "type": "boolean",
-                        "description": "Filter by risk relevance. If true, only return risk-relevant countermeasures. Defaults to true.",
-                        "default": True
+                        "type": "string",
+                        "description": "The task ID of the countermeasure to retrieve (e.g., 'T640')"
                     }
                 },
                 "required": ["project_id", "countermeasure_id"]
@@ -709,9 +708,8 @@ async def list_tools() -> List[Tool]:
                         "minimum": 1
                     },
                     "countermeasure_id": {
-                        "type": "integer",
-                        "description": "The ID of the countermeasure to update (task number, e.g., 536 for T536)",
-                        "minimum": 1
+                        "type": "string",
+                        "description": "The task ID of the countermeasure to update (e.g., 'T640')"
                     },
                     "status": {
                         "type": "string",
@@ -1422,24 +1420,31 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                                 # If still no business unit, use the first available business unit as fallback
                                 if not business_unit_id:
                                     try:
-                                        bus_response = api_client.list_business_units({"page_size": 1})
+                                        # Use a larger page size to ensure we get business units
+                                        bus_response = api_client.list_business_units({"page_size": 1000})
                                         business_units = bus_response.get("results", [])
                                         if business_units:
                                             business_unit_id = business_units[0].get("id")
                                             print(f"Using first available business unit '{business_units[0].get('name')}' (ID: {business_unit_id})", file=sys.stderr)
                                         else:
-                                            print(f"Warning: No business units found in account, creating application without business unit", file=sys.stderr)
+                                            print(f"Error: No business units found in account", file=sys.stderr)
                                     except Exception as bu_error:
-                                        print(f"Warning: Could not list business units for fallback: {bu_error}", file=sys.stderr)
+                                        print(f"Error: Could not list business units for fallback: {bu_error}", file=sys.stderr)
+                            
+                            # Validate that we have a business unit before creating the application
+                            if not business_unit_id:
+                                result = {
+                                    "error": "Cannot create application: No business unit found. Please provide business_unit_id or business_unit_name, or ensure your account has at least one business unit."
+                                }
+                                return [TextContent(type="text", text=json.dumps(result, indent=2))]
                             
                             # Create new application with the provided name
                             app_data = {"name": application_name}
                             # Add description if provided
                             if "application_description" in arguments:
                                 app_data["description"] = arguments["application_description"]
-                            # Add business unit if resolved
-                            if business_unit_id:
-                                app_data["business_unit"] = business_unit_id
+                            # Add business unit (we've validated it exists above)
+                            app_data["business_unit"] = business_unit_id
                             
                             # Create the application via API
                             app_result = api_client.create_application(app_data)
@@ -1455,19 +1460,60 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     # If application_id was provided, we use the existing application
                     application_was_existing = True
                 
-                # Step 2: Create project in the application
-                # Projects represent individual software components or services
-                project_data = {
-                    "name": arguments["project_name"],  # Required parameter
-                    "application": application_id  # Link to the application
-                }
-                # Add project description if provided
-                if "project_description" in arguments:
-                    project_data["description"] = arguments["project_description"]
+                # Step 2: Check for existing project with the same name in the application
+                project_name = arguments["project_name"]
+                reuse_existing = arguments.get("reuse_existing_project", False)
+                project_result = None
+                project_was_existing = False
                 
-                # Create the project via API
-                project_result = api_client.create_project(project_data)
-                project_id = project_result.get("id")
+                # Check if a project with the same name already exists in this application
+                existing_project = None
+                try:
+                    # List all projects and filter by application and name
+                    projects_response = api_client.list_projects({"page_size": 1000})
+                    projects = projects_response.get("results", [])
+                    
+                    # Find project with matching name in the same application
+                    for proj in projects:
+                        proj_app = proj.get("application")
+                        proj_app_id = proj_app.get("id") if isinstance(proj_app, dict) else proj_app
+                        if (proj_app_id == application_id and 
+                            proj.get("name", "").strip().lower() == project_name.strip().lower()):
+                            existing_project = proj
+                            break
+                except Exception as list_error:
+                    print(f"Warning: Could not list existing projects: {list_error}", file=sys.stderr)
+                
+                if existing_project:
+                    if reuse_existing:
+                        # Reuse the existing project
+                        project_result = existing_project
+                        project_id = project_result.get("id")
+                        project_was_existing = True
+                        print(f"Using existing project '{project_name}' (ID: {project_id})", file=sys.stderr)
+                    else:
+                        # Return an error suggesting a different name or to use reuse_existing_project
+                        result = {
+                            "error": f"A project with the name '{project_name}' already exists in this application (ID: {existing_project.get('id')}).",
+                            "existing_project_id": existing_project.get("id"),
+                            "suggestion": "Either provide a different project_name, or set reuse_existing_project=true to reuse the existing project."
+                        }
+                        return [TextContent(type="text", text=json.dumps(result, indent=2))]
+                else:
+                    # Create new project in the application
+                    # Projects represent individual software components or services
+                    project_data = {
+                        "name": project_name,  # Required parameter
+                        "application": application_id  # Link to the application
+                    }
+                    # Add project description if provided
+                    if "project_description" in arguments:
+                        project_data["description"] = arguments["project_description"]
+                    
+                    # Create the project via API
+                    project_result = api_client.create_project(project_data)
+                    project_id = project_result.get("id")
+                    print(f"Created new project '{project_name}' (ID: {project_id})", file=sys.stderr)
                 
                 # Step 3: Get the project survey structure with all available questions and answers
                 # This provides the AI with all possible survey options to choose from
@@ -1580,7 +1626,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     "project": {
                         "id": project_id,
                         "name": project_result.get("name"),
-                        "url": project_result.get("url")  # Direct link to project in SD Elements
+                        "url": project_result.get("url"),  # Direct link to project in SD Elements
+                        "was_existing": project_was_existing
                     },
                     # Survey structure: All available questions and answers
                     "survey_structure": {
@@ -1655,6 +1702,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         elif name == "get_countermeasure":
             project_id = arguments["project_id"]
             countermeasure_id = arguments["countermeasure_id"]
+            # Construct full task ID if only task_id is provided (e.g., "T151" -> "31280-T151")
+            if not countermeasure_id.startswith(f"{project_id}-"):
+                countermeasure_id = f"{project_id}-{countermeasure_id}"
             params = {}
             # Default risk_relevant to True if not specified
             risk_relevant = arguments.get("risk_relevant", True)
@@ -1664,6 +1714,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         elif name == "update_countermeasure":
             project_id = arguments.pop("project_id")
             countermeasure_id = arguments.pop("countermeasure_id")
+            # Construct full task ID if only task_id is provided (e.g., "T151" -> "31280-T151")
+            if not countermeasure_id.startswith(f"{project_id}-"):
+                countermeasure_id = f"{project_id}-{countermeasure_id}"
             data = arguments.copy()  # Remaining arguments are the update data
             
             # Convert notes to status_note for tasks endpoint

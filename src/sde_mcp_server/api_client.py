@@ -620,15 +620,16 @@ class SDElementsAPIClient:
             full_task_id = task_id
         return self.patch(f'projects/{project_id}/tasks/{full_task_id}/', data)
     
-    def get_countermeasure(self, project_id: int, countermeasure_id: int, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Get countermeasure by ID (uses tasks endpoint)"""
-        task_id = f"T{countermeasure_id}"
-        return self.get_task(project_id, task_id, params)
+    def get_countermeasure(self, project_id: int, countermeasure_id: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Get countermeasure by project and task ID"""
+        return self.get_task(project_id, countermeasure_id, params)
     
-    def update_countermeasure(self, project_id: int, countermeasure_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update a countermeasure (uses tasks endpoint)"""
-        task_id = f"T{countermeasure_id}"
-        return self.update_task(project_id, task_id, data)
+    def update_countermeasure(self, project_id: int, countermeasure_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a countermeasure (task)"""
+        # Convert 'notes' to 'status_note' if present
+        if 'notes' in data:
+            data['status_note'] = data.pop('notes')
+        return self.update_task(project_id, countermeasure_id, data)
     
     # Users API
     def list_users(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
