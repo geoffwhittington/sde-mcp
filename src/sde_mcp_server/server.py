@@ -73,6 +73,165 @@ def format_error_response(error: Exception) -> str:
         return f"Error: {str(error)}"
 
 
+def extract_answer_texts_from_context(code_context: str, available_answers: List[Dict[str, Any]]) -> List[str]:
+    """
+    Extract relevant answer texts from code_context by matching against available answers.
+    
+    This function analyzes the code_context and matches it against available survey answers
+    to determine which technologies and characteristics apply to the project.
+    
+    Args:
+        code_context: Description of the project/technologies
+        available_answers: List of available answer dictionaries with 'text' field
+        
+    Returns:
+        List of answer texts that match the code_context
+    """
+    import re
+    
+    if not code_context:
+        return []
+    
+    code_context_lower = code_context.lower()
+    matched_answers = []
+    
+    # Common technology mappings (case-insensitive)
+    # Order matters: longer, more specific matches should come first
+    technology_keywords = [
+        # Application types (longer matches first)
+        ('rest api', 'REST API'),
+        ('restful api', 'REST API'),
+        ('restful', 'REST API'),
+        ('web application', 'Web Application'),
+        ('web app', 'Web Application'),
+        ('webapp', 'Web Application'),
+        ('mobile application', 'Mobile Application'),
+        ('mobile app', 'Mobile Application'),
+        ('desktop application', 'Desktop Application'),
+        ('desktop app', 'Desktop Application'),
+        ('microservices', 'Microservices'),
+        ('microservice', 'Microservices'),
+        
+        # Cloud platforms (longer matches first)
+        ('amazon web services', 'AWS'),
+        ('google cloud platform', 'Google Cloud Platform'),
+        ('google cloud', 'Google Cloud Platform'),
+        ('microsoft azure', 'Azure'),
+        
+        # Programming languages (longer matches first)
+        ('javascript', 'JavaScript'),
+        ('typescript', 'TypeScript'),
+        ('node.js', 'Node.js'),
+        ('nodejs', 'Node.js'),
+        ('golang', 'Go'),
+        ('csharp', 'C#'),
+        ('ruby on rails', 'Ruby on Rails'),
+        ('spring boot', 'Spring Boot'),
+        
+        # Single-word languages (use word boundaries to avoid false matches)
+        ('python', 'Python'),
+        ('java', 'Java'),
+        ('go', 'Go'),
+        ('rust', 'Rust'),
+        ('php', 'PHP'),
+        ('ruby', 'Ruby'),
+        ('swift', 'Swift'),
+        ('kotlin', 'Kotlin'),
+        ('scala', 'Scala'),
+        ('r language', 'R'),  # Only match "R" if explicitly mentioned as "R language"
+        ('r programming', 'R'),
+        ('matlab', 'MATLAB'),
+        
+        # Databases (longer matches first)
+        ('postgresql', 'PostgreSQL'),
+        ('postgres', 'PostgreSQL'),
+        ('sql server', 'SQL Server'),
+        ('oracle database', 'Oracle Database'),
+        ('mysql', 'MySQL'),
+        ('mongodb', 'MongoDB'),
+        ('redis', 'Redis'),
+        ('cassandra', 'Cassandra'),
+        ('sqlite', 'SQLite'),
+        ('dynamodb', 'DynamoDB'),
+        ('elasticsearch', 'Elasticsearch'),
+        
+        # Frameworks and tools (longer matches first)
+        ('vue.js', 'Vue.js'),
+        ('spring', 'Spring'),
+        ('react', 'React'),
+        ('angular', 'Angular'),
+        ('vue', 'Vue.js'),
+        ('express', 'Express'),
+        ('django', 'Django'),
+        ('flask', 'Flask'),
+        ('rails', 'Ruby on Rails'),
+        ('laravel', 'Laravel'),
+        ('kubernetes', 'Kubernetes'),
+        ('k8s', 'Kubernetes'),
+        ('docker', 'Docker'),
+        
+        # Security and authentication
+        ('oauth 2.0', 'OAuth 2.0'),
+        ('oauth2', 'OAuth 2.0'),
+        ('oauth', 'OAuth'),
+        ('jwt', 'JWT'),
+        ('saml', 'SAML'),
+        ('ldap', 'LDAP'),
+        ('active directory', 'Active Directory'),
+        
+        # Data formats
+        ('json', 'JSON'),
+        ('xml', 'XML'),
+        ('yaml', 'YAML'),
+        ('csv', 'CSV'),
+    ]
+    
+    # Extract answer texts from available answers for matching
+    available_texts = {ans.get('text', '').lower(): ans.get('text', '') for ans in available_answers if ans.get('text')}
+    
+    # Match technologies from code_context using word boundaries for better precision
+    # Process longer matches first to avoid substring issues
+    for keyword, answer_text in technology_keywords:
+        # Use word boundaries for single-word keywords to avoid false matches
+        # For multi-word keywords, use simple substring matching
+        if ' ' in keyword:
+            # Multi-word: simple substring match
+            pattern = re.escape(keyword)
+        else:
+            # Single-word: use word boundaries to avoid substring matches
+            # e.g., "rest" won't match "r" but "rest api" will match "rest"
+            pattern = r'\b' + re.escape(keyword) + r'\b'
+        
+        if re.search(pattern, code_context_lower, re.IGNORECASE):
+            # Check if this answer text exists in available answers
+            if answer_text.lower() in available_texts:
+                matched_text = available_texts[answer_text.lower()]
+                if matched_text not in matched_answers:
+                    matched_answers.append(matched_text)
+    
+    # Also do fuzzy matching against available answers
+    # Look for direct mentions of answer texts in code_context
+    # Sort by length (longest first) to prioritize more specific matches
+    sorted_available = sorted(available_texts.items(), key=lambda x: len(x[0]), reverse=True)
+    
+    for answer_text_lower, answer_text in sorted_available:
+        # Skip if already matched
+        if answer_text in matched_answers:
+            continue
+        
+        # Skip very short answers (1-2 characters) to avoid false matches
+        if len(answer_text_lower) <= 2:
+            continue
+        
+        # Use word boundaries for better matching
+        # Check if answer text appears as a whole word in code_context
+        pattern = r'\b' + re.escape(answer_text_lower) + r'\b'
+        if re.search(pattern, code_context_lower, re.IGNORECASE):
+            matched_answers.append(answer_text)
+    
+    return matched_answers
+
+
 @server.list_tools()
 async def list_tools() -> List[Tool]:
     """List all available tools for SD Elements API interaction"""
@@ -371,6 +530,15 @@ async def list_tools() -> List[Tool]:
                     "application_id": {
                         "type": "integer",
                         "description": "ID of existing application (optional, will create new if not provided and application_name is provided)"
+                    },
+                    "business_unit_id": {
+                        "type": "integer",
+                        "description": "ID of the business unit for the application (optional, will use business_unit_name or application_name if not provided)",
+                        "minimum": 1
+                    },
+                    "business_unit_name": {
+                        "type": "string",
+                        "description": "Name of the business unit for the application (optional, will use application_name if not provided)"
                     },
                     "project_name": {
                         "type": "string",
@@ -1214,11 +1382,46 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                             application_was_existing = True
                             print(f"Using existing application '{application_name}' (ID: {application_id})", file=sys.stderr)
                         else:
+                            # Resolve business unit ID
+                            business_unit_id = None
+                            
+                            # Priority: business_unit_id > business_unit_name > application_name
+                            if "business_unit_id" in arguments:
+                                business_unit_id = arguments["business_unit_id"]
+                                print(f"Using provided business_unit_id: {business_unit_id}", file=sys.stderr)
+                            else:
+                                # Try to find business unit by name
+                                business_unit_name_to_find = arguments.get("business_unit_name")
+                                if not business_unit_name_to_find:
+                                    # If no business_unit_name provided, use application_name
+                                    business_unit_name_to_find = application_name
+                                
+                                try:
+                                    # List all business units and search for one with matching name
+                                    bus_response = api_client.list_business_units({"page_size": 1000})
+                                    business_units = bus_response.get("results", [])
+                                    
+                                    # Search for business unit with matching name (case-insensitive)
+                                    for bu in business_units:
+                                        if bu.get("name", "").strip().lower() == business_unit_name_to_find.strip().lower():
+                                            business_unit_id = bu.get("id")
+                                            print(f"Found business unit '{business_unit_name_to_find}' (ID: {business_unit_id})", file=sys.stderr)
+                                            break
+                                    
+                                    if not business_unit_id:
+                                        print(f"Warning: Business unit '{business_unit_name_to_find}' not found, creating application without business unit", file=sys.stderr)
+                                except Exception as bu_error:
+                                    # If listing fails, we'll proceed without business unit
+                                    print(f"Warning: Could not list business units: {bu_error}", file=sys.stderr)
+                            
                             # Create new application with the provided name
                             app_data = {"name": application_name}
                             # Add description if provided
                             if "application_description" in arguments:
                                 app_data["description"] = arguments["application_description"]
+                            # Add business unit if resolved
+                            if business_unit_id:
+                                app_data["business_unit"] = business_unit_id
                             
                             # Create the application via API
                             app_result = api_client.create_application(app_data)
@@ -1252,20 +1455,59 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 # This provides the AI with all possible survey options to choose from
                 survey_structure = api_client.get_project_survey(project_id)
                 
+                # Load library answers to get all available answer options
+                # This is needed for extracting answers from code_context
+                if api_client._library_answers_cache is None:
+                    api_client.load_library_answers()
+                
                 # Extract a summary of available answers for easier AI review
-                # The AI can use this to understand what options are available
+                # Use library answers cache since get_project_survey doesn't return full structure
                 available_answers_summary = []
-                for section in survey_structure.get('sections', []):
-                    section_title = section.get('title', 'Untitled Section')
-                    for question in section.get('questions', []):
-                        question_text = question.get('text', 'Untitled Question')
-                        for answer in question.get('answers', []):
-                            available_answers_summary.append({
-                                'id': answer.get('id'),
-                                'text': answer.get('text', ''),
-                                'question': question_text,
-                                'section': section_title
-                            })
+                if api_client._library_answers_cache:
+                    for answer in api_client._library_answers_cache:
+                        available_answers_summary.append({
+                            'id': answer.get('id'),
+                            'text': answer.get('text', ''),
+                            'question': answer.get('display_text', ''),
+                            'section': answer.get('section', '')
+                        })
+                
+                # Step 3.5: Automatically set survey answers based on code_context
+                # Extract relevant answer texts from code_context and set them
+                answer_setting_result = None
+                answers_set = False
+                extracted_answer_texts = []
+                
+                if code_context:
+                    try:
+                        # Extract answer texts that match the code_context
+                        extracted_answer_texts = extract_answer_texts_from_context(code_context, available_answers_summary)
+                        
+                        if extracted_answer_texts:
+                            # Use add_survey_answers_by_text to add answers to the draft
+                            # This will add them to the draft without committing
+                            print(f"Adding survey answers based on code_context: {extracted_answer_texts}", file=sys.stderr)
+                            answer_setting_result = api_client.add_survey_answers_by_text(
+                                project_id, 
+                                extracted_answer_texts,
+                                fuzzy_threshold=0.75,
+                                auto_resolve_dependencies=True
+                            )
+                            added_count = answer_setting_result.get('summary', {}).get('added', 0)
+                            if added_count > 0:
+                                answers_set = True
+                                print(f"Successfully added {added_count} answer(s) to survey draft", file=sys.stderr)
+                            if not answer_setting_result.get('success', False):
+                                print(f"Warning: Some answers could not be added: {answer_setting_result}", file=sys.stderr)
+                        else:
+                            print(f"No matching answers found in code_context: '{code_context}'", file=sys.stderr)
+                    except Exception as answer_error:
+                        # If setting answers fails, log it but don't fail the entire operation
+                        answer_setting_result = {
+                            "error": str(answer_error),
+                            "note": "Failed to automatically set answers from code_context, but project was created successfully"
+                        }
+                        print(f"Warning: Could not set answers from code_context: {answer_error}", file=sys.stderr)
                 
                 # Step 4: Check survey draft state to see if answers are selected
                 # Get the survey draft to check what answers are currently selected
@@ -1330,6 +1572,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         "available_answers": available_answers_summary[:100],  # Limit to first 100 for readability
                         "full_survey": survey_structure  # Complete survey structure if needed
                     },
+                    # Survey answer setting (automatic from code_context)
+                    "survey_answers_auto_set": answers_set,
+                    "extracted_answer_texts": extracted_answer_texts if code_context else [],
+                    "answer_setting_result": answer_setting_result,
                     # Survey draft state
                     "survey_draft_state": {
                         "selected_answers_count": selected_answers_count,
@@ -1342,10 +1588,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     "survey_commit_result": commit_result,
                     # Next steps for AI client
                     "next_steps": {
-                        "step_1": f"Survey draft checked: {selected_answers_count} answer(s) currently selected",
-                        "step_2": f"Survey draft has been {'committed successfully' if commit_success else 'skipped (no answers)' if commit_skipped else 'attempted to commit'}",
-                        "step_3": f"Countermeasures will be {'generated' if commit_success else 'generated after answers are set and draft is committed' if commit_skipped else 'generated after manual commit'}",
-                        "step_4": "If no answers were set, use add_survey_answers_by_text or set_project_survey_by_text to set answers based on code_context, then call commit_survey_draft"
+                        "step_1": f"Survey answers {'automatically set from code_context' if answers_set else 'not set automatically'}",
+                        "step_2": f"Survey draft checked: {selected_answers_count} answer(s) currently selected",
+                        "step_3": f"Survey draft has been {'committed successfully' if commit_success else 'skipped (no answers)' if commit_skipped else 'attempted to commit'}",
+                        "step_4": f"Countermeasures will be {'generated' if commit_success else 'generated after answers are set and draft is committed' if commit_skipped else 'generated after manual commit'}"
                     }
                 }
             except Exception as e:
