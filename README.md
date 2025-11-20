@@ -65,35 +65,43 @@ A Model Context Protocol server that provides **SD Elements API integration**. T
 
 ## Quick Start
 
-### Install
+### Using uvx (recommended)
 
+#### Option 1: From GitHub (Current)
 ```bash
-# From GitHub
-pip install git+https://github.com/geoffwhittington/sde-mcp.git
-# or with uvx
 uvx git+https://github.com/geoffwhittington/sde-mcp.git
+```
 
-# From PyPI (when published)
+#### Option 2: From PyPI (Future - when published)
+```bash
+uvx sde-mcp-server
+```
+
+### Using uv
+
+#### Install from GitHub
+```bash
+uv pip install git+https://github.com/geoffwhittington/sde-mcp.git
+sde-mcp-server
+```
+
+#### Install from PyPI (when available)
+```bash
+uv pip install sde-mcp-server
+sde-mcp-server
+```
+
+### Using pip
+
+#### Install from GitHub
+```bash
+pip install git+https://github.com/geoffwhittington/sde-mcp.git
+sde-mcp-server
+```
+
+#### Install from PyPI (when available)
+```bash
 pip install sde-mcp-server
-```
-
-### Configure
-
-Set environment variables:
-```bash
-export SDE_HOST="https://your-instance.sdelements.com"
-export SDE_API_KEY="your-api-key"
-```
-
-Or create a `.env` file:
-```env
-SDE_HOST=https://your-instance.sdelements.com
-SDE_API_KEY=your-api-key
-```
-
-### Run
-
-```bash
 sde-mcp-server
 ```
 
@@ -258,14 +266,26 @@ If you have the package installed locally:
 
 ## Development
 
-### Development Setup
+### Prerequisites
+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) installed
+- Python 3.10 or higher
+
+### Setup
 
 ```bash
+# Clone the repository
 git clone <repository-url>
-cd sde-mcp
-uv sync --all-extras  # Includes dev and test dependencies
+cd sde-mcp-server
+
+# Create virtual environment and install dependencies
+uv sync
+
+# Run in development mode
 uv run python -m sde_mcp_server
 ```
+
+### Testing Locally
 
 ### Testing
 
