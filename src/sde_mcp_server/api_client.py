@@ -166,7 +166,19 @@ class SDElementsAPIClient:
         return self.get(f'projects/{project_id}/', params)
     
     def create_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new project"""
+        """
+        Create a new project.
+        
+        Args:
+            data: Dictionary with project data including 'name', 'application' (or 'application_id'),
+                  and optionally 'profile' (or 'profile_id'), 'description', 'phase_id'
+        """
+        # Transform application_id to application if needed
+        if 'application_id' in data:
+            data['application'] = data.pop('application_id')
+        # Transform profile_id to profile if needed
+        if 'profile_id' in data:
+            data['profile'] = data.pop('profile_id')
         return self.post('projects/', data)
     
     def update_project(self, project_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -747,6 +759,15 @@ class SDElementsAPIClient:
     def get_business_unit(self, bu_id: int, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Get business unit by ID"""
         return self.get(f'business-units/{bu_id}/', params)
+    
+    # Profiles API
+    def list_profiles(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """List all available profiles"""
+        return self.get('profiles/', params)
+    
+    def get_profile(self, profile_id: int, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Get profile by ID"""
+        return self.get(f'profiles/{profile_id}/', params)
     
     # Groups API
     def list_groups(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
