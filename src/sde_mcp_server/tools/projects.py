@@ -173,7 +173,10 @@ async def create_project(
 async def update_project(ctx: Context, project_id: int, name: Optional[str] = None, description: Optional[str] = None, status: Optional[str] = None, risk_policy: Optional[int] = None) -> str:
     """Update an existing project (name, description, status, or risk_policy). Use when user says 'update', 'change', 'modify', or 'rename'. Do NOT use for 'archive', 'delete', or 'remove' - use delete_project instead.
     
-    IMPORTANT: risk_policy must be the numeric ID of the risk policy (e.g., 1, 2, 3), not the name. Use list_risk_policies to find the correct ID."""
+    IMPORTANT: risk_policy must be the numeric ID of the risk policy (e.g., 1, 2, 3), not the name. Use list_risk_policies to find the correct ID.
+    
+    According to the API documentation (https://docs.sdelements.com/master/api/docs/projects/), 
+    risk_policy is an optional field that accepts the ID of the Risk Policy that applies to this project."""
     global api_client
     if api_client is None:
         api_client = init_api_client()
