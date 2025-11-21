@@ -17,8 +17,11 @@ A Model Context Protocol server that provides **SD Elements API integration**. T
 * `get_project` - Get detailed project information
 * `create_project` - Create a new project
 * `create_project_from_code` - Create application and project in SD Elements. Returns the project survey structure with all available questions and answers. **IMPORTANT:** The AI client must review the survey structure, determine appropriate answers based on the project context, set them using `add_survey_answers_by_text` or `set_project_survey_by_text`, and then commit the survey draft using `commit_survey_draft` to publish the survey and generate countermeasures.
-* `update_project` - Update project details
+* `update_project` - Update project details (name, description, status, risk_policy)
 * `delete_project` - Delete a project
+* `list_profiles` - List all available profiles
+* `list_risk_policies` - List all available risk policies
+* `get_risk_policy` - Get details of a specific risk policy
 
 ### Application Management
 * `list_applications` - List all applications
@@ -34,7 +37,7 @@ A Model Context Protocol server that provides **SD Elements API integration**. T
 
 ### Project Surveys
 * `get_project_survey` - Get the complete survey structure for a project
-* `get_current_survey_answers` - Get the current answers assigned to a survey in readable format
+* `get_survey_answers_for_project` - Get the survey answers that are currently selected/assigned for a project in readable format
 * `update_project_survey` - Update project survey answers with answer IDs
 * `find_survey_answers` - Find answer IDs by searching for answer text (e.g., "Java", "Web Application")
 * `set_project_survey_by_text` - Set survey using answer text directly instead of IDs
@@ -287,176 +290,37 @@ uv run python -m sde_mcp_server
 
 ### Testing Locally
 
-#### Step 1: Set Up Environment Variables
+### Testing
 
-Create a `.env` file in the project root [[memory:4265507]]:
-
+**Setup (one-time):**
 ```bash
-# .env
-SDE_HOST=https://your-sdelements-instance.com
-SDE_API_KEY=your-actual-api-key-here
+# Install project + test dependencies
+pip install -e ".[test-all]"
+# OR with uv:
+uv sync --all-extras
+
+# Set up API key for integration tests (optional)
+cp tests/.env.example .env
+# Edit .env and add: OPENAI_API_KEY=your-key-here
 ```
 
-Or export them:
-
+**Run tests (always from project root):**
 ```bash
-export SDE_HOST="https://your-sdelements-instance.com"
-export SDE_API_KEY="your-api-key-here"
+# CSV-driven prompt-to-tool mapping tests (requires OpenAI API key)
+pytest tests/test_prompt_mapping_from_csv.py -m 'integration and not unit' -v
 ```
 
-#### Step 2: Activate Virtual Environment
-
+**Test with MCP Inspector:**
 ```bash
-# The project uses venv/ for the virtual environment
-source venv/bin/activate
-
-# Install dependencies if not already done
-uv sync
-```
-
-#### Step 3: Test Basic Imports
-
-```bash
-# Run the import test
-python test_import.py
-```
-
-Expected output:
-```
-✓ Package imported successfully
-✓ API client module imported successfully
-✓ Server module imported successfully
-✓ Main function found
-✓ Entry point function found
-```
-
-#### Step 4: Test the MCP Server
-
-**Option A: Run with environment variables**
-```bash
-SDE_HOST=https://your-instance.com SDE_API_KEY=your-key python -m sde_mcp_server
-```
-
-**Option B: Run with .env file**
-```bash
-python -m sde_mcp_server
-```
-
-The server will start and output:
-```
-SD Elements MCP Server starting...
-Host: https://your-instance.com
-Configuration validated successfully
-```
-
-#### Step 5: Test with MCP Inspector (Recommended)
-
-The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is the best tool for local testing:
-
-```bash
-# Install MCP Inspector
 npx @modelcontextprotocol/inspector python -m sde_mcp_server
 ```
 
-This opens a web interface where you can:
-- See all available tools
-- Test individual tools with parameters
-- View responses in real-time
-- Debug issues
+**Important:** 
+- Always run tests from the project root directory (not from `tests/`)
+- The project must be installed first (`pip install -e .` or `uv sync`)
+- Test dependencies are isolated - they don't pollute the server installation
 
-#### Step 6: Test in Cursor
-
-**This project includes workspace-specific MCP configuration!**
-
-1. **Add your credentials to `.cursor/mcp.json`:**
-   ```bash
-   # Edit .cursor/mcp.json and replace the placeholder values:
-   nano .cursor/mcp.json
-   ```
-   
-   Replace:
-   - `SDE_HOST`: `https://your-sdelements-instance.com` → your actual SD Elements URL
-   - `SDE_API_KEY`: `your-api-key-here` → your actual API key
-
-2. **Reload Cursor window** (Cmd/Ctrl+Shift+P → "Developer: Reload Window")
-
-3. **Test with natural language:**
-   ```
-   "List all projects in SD Elements"
-   "Get the survey for project 123"
-   "Test the SD Elements connection"
-   ```
-
-**Note:** `.cursor/mcp.json` is gitignored to protect your credentials. A template is available at `.cursor/mcp.json.example`.
-
-**If Cursor doesn't auto-detect**, you can add to global config at `~/.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "sde-elements": {
-      "command": "python3",
-      "args": ["-m", "sde_mcp_server"],
-      "cwd": "/home/geoff/projects/sde-mcp",
-      "env": {
-        "PYTHONPATH": "/home/geoff/projects/sde-mcp/venv/lib/python3.10/site-packages"
-      }
-    }
-  }
-}
-```
-
-#### Step 7: Test Specific Features
-
-**Test Survey Management:**
-```bash
-# In Cursor or MCP Inspector
-"What are the current survey answers for project 1?"
-"Add Python to project 1's survey"
-```
-
-**Test Repository Scanning:**
-```bash
-"List my scan connections"
-"Scan https://github.com/org/repo for project 1"
-```
-
-**Test Diagrams:**
-```bash
-"List diagrams for project 1"
-"Create a diagram from description: Web app with database"
-```
-
-### Debugging
-
-**Enable verbose logging:**
-```bash
-# Add to your code temporarily
-import logging
-logging.basicConfig(level=logging.DEBUG)
-```
-
-**Check API connectivity:**
-```python
-from sde_mcp_server.api_client import SDElementsAPIClient
-
-client = SDElementsAPIClient(
-    host="https://your-instance.com",
-    api_key="your-key"
-)
-
-# Test connection
-if client.test_connection():
-    print("✓ Connected to SD Elements")
-else:
-    print("✗ Connection failed")
-```
-
-**Common issues:**
-- **"Configuration error"**: Check `SDE_HOST` and `SDE_API_KEY` are set
-- **"Authentication failed"**: Verify your API key is valid
-- **"Connection error"**: Check network access to SD Elements instance
-- **Module import errors**: Ensure virtual environment is activated
+See `tests/README.md` for full testing guide.
 
 ### Building
 

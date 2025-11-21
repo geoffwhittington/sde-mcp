@@ -35,7 +35,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "mcp>=1.0.0",
+    "fastmcp>=2.13.0",
     "requests>=2.31.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.5.0",
@@ -43,13 +43,48 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Development tools (formatting, linting, type checking)
 dev = [
+    "black",
+    "isort",
+    "mypy",
+]
+
+# Unit test dependencies (fast, no external services)
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "python-dotenv>=1.0.0",  # For loading .env files in tests
+]
+
+# Integration test dependencies (requires OpenAI API key)
+# NOTE: These are ONLY needed for running integration tests
+# The MCP server itself does NOT require these libraries
+integration = [
+    "openai>=1.0.0",
+]
+
+# All test dependencies (unit + integration)
+test-all = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "openai>=1.0.0",
+]
+
+# Complete development environment
+dev-all = [
     "black",
     "isort",
     "mypy",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
+    "pytest-mock",
+    "openai>=1.0.0",
 ]
 
 [project.urls]
@@ -115,9 +150,15 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
+# Skip integration tests by default (use -m integration to run them)
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --cov=sde_mcp_server --cov-report=term-missing"
-asyncio_mode = "auto" 
+pythonpath = ["src"]  # Add src to path so tests can import sde_mcp_server
+addopts = "-v --cov=sde_mcp_server --cov-report=term-missing -m 'not integration'"
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests as integration tests (requires LLM API key)",
+    "unit: marks tests as unit tests",
+] 
